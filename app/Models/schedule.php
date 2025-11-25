@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class schedule extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'cinema_id',
+        'movie_id',
+        'hours',
+        'price'
+    ];
+
+    //array : [], json: {}, []
+    //di migration support json, biar si data jsonnya menggunakan format array
+    protected function casts(): array
+    {
+        return [
+            'hours' => 'array'
+        ];
+    }
+
+    //karna cinema posisi one, jadi tunggal
+    public function cinema() {
+        //schedule ada di posisi 2, gunakan belongsto untuk menyambungkan
+        return $this->belongsTo(Cinema::class);
+    }
+
+    public function movie() {
+        return $this->belongsTo(Movie::class);
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(ticket::class);
+    }
+
+}

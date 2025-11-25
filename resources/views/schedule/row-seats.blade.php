@@ -1,0 +1,162 @@
+@extends('templates.app')
+@section('content')
+    <div class="container card my-5 p-4" style="margin-bottom: 20% !important">
+        <div class="card-body">
+            <b>{{ $schedule['cinema']['name'] }}</b>
+            <br><b>{{ now()->format('d F Y') }} - {{ $hour }}</b>
+            <div class="alert alert-secondary">
+                <i class="fa-solid fa-circle-info text-danger"></i> Anak berusia 2 tahun wajib membeli tiket.
+            </div>
+            <div class="w-50 d-block mx-auto my-4">
+                <div class="row">
+                    <div class="col-4 d-flex">
+                        <div style="width: 20px; height: 20px; background: blue; margin-right: 5px"></div>Kursi Dipilih
+                    </div>
+                    <div class="col-4 d-flex">
+                        <div style="width: 20px; height: 20px; background: #112646; margin-right: 5px"></div>Kursi Tersedia
+                    </div>
+                    <div class="col-4 d-flex">
+                        <div style="width: 20px; height: 20px; background: #eaeaea; margin-right: 5px"></div>Kursi Terjual
+                    </div>
+                </div>
+            </div>
+
+            @php
+                // array untuk looping, range() : membuat rentang tertentu menjadi array
+                $rows = range('A', 'H');
+                $cols = range(1, 18);
+            @endphp
+            {{-- looping pertama bikin baris kebawah A-H --}}
+            @foreach ($rows as $row)
+                {{-- urnuk loop 1-8 kesamping dibungkus d-flex --}}
+                <div class="d-flex justify-content-center align-items-center">
+                    @foreach ($cols as $col)
+                        @if ($col == 7)
+                            <div style="width: 50px;"></div>
+                        @endif
+
+                        {{-- in array('item', $array : mencari item didalam array) --}}
+                        @php
+                            $seat = $row . '-' . $col;
+                        @endphp
+                        @if (in_array($seat, $soldSeatsFormat))
+                            <div
+                                style="width: 45px; height: 45px; text-align: center;
+                            font-weight: bold; color: black; padding-top: 10px;
+                            background: #eaeaea; margin: 5px; border-radius: 8px">
+                                {{ $row }}-{{ $col }} </div>
+                        @else
+                            <div style="width: 45px; height: 45px; text-align: center;
+                            font-weight: bold; color: white; padding-top: 10px; cursor: pointer;
+                            background: #112646; margin: 5px; border-radius: 8px"
+                                onclick="selectSeat( '{{ $schedule->price }}', '{{ $row }}', '{{ $col }}', this)">
+                                {{ $row }}-{{ $col }}
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <div class="fixed-bottom">
+        <div class="p-4 bg-light text-center w-100"><b>LAYAR BIOSKOP</b></div>
+        <div class="row w-100 bg-light">
+            <div class="col-6 py-3 text-center" style="border: 1px solid grey">
+                <h5>Total Harga</h5>
+                <h5 id="totalPrice">Rp. -</h5>
+            </div>
+            <div class="col-6 py-3 text-center" style="border: 1px solid grey">
+                <h5>Kursi Dipilih</h5>
+                <h5 id="seats">-</h5>
+            </div>
+            {{-- input : hidden nyimmpen nilai yang di perlukan js untuk membuat dara, namun di tampilan di sembunyikan} --}}
+            <input type="hidden" id="user_id" value="{{ auth()->user()->id }}">
+            <input type="hidden" id="schedule_id" value="{{ $schedule['id'] }}">
+            <input type="hidden" id="date" value="{{ now() }}">
+            <input type="hidden" id="hour" value="{{ $hour }}">
+
+            <div class="w-100 bg-light p-2 text-center" id="btnOrder"><b>RINGKASAN ORDER</b></div>
+        </div>
+    </div>
+@endsection
+
+@push('script')
+    <script>
+        let seats = [];
+        let totalPrice = 0;
+
+        function selectSeat(price, row, col, element) {
+            // buat format nomor kursi : A - 10
+            let seat = row + "-" + col;
+            // cek ke array seats apakah kursi ini uda adah di array atau nlm (uda perna diklik/blm)
+            // indexOf() mencari item di array dan mengembalikan nilai index itemnya
+            let indexSeat = seats.indexOf(seat);
+            // jika ada item makan index array bernilai 0-dst kalo gaada -1
+            if (indexSeat == -1) {
+                /// kalau kursi tsb belum ada di array makan tambahkan dan warna biru
+                seats.push(seat); // push : menambahkan item kedalam array
+                element.style.background = "blue";
+            } else {
+                // kalau kursi ada di array artinya klik kali ini untuk hapus
+                seats.splice(indexSeat, 1); // splice : mengahpus item di array sesuai index yang diberikan sebanyak 1
+                element.style.background = "#112646"; // warna biru
+            }
+
+            totalPrice = price * seats.length; // length : count php, menghitung isi array
+            let totalPriceElement = document.querySelector('#totalPrice');
+            totalPriceElement.innerText = totalPrice;
+
+            let seatsElement = document.querySelector('#seats');
+            // join(', ') : mengubah array jadi string, dipisah dengan koma
+            seatsElement.innerText = seats.join(', ');
+
+            let btnOrder = document.querySelector('#btnOrder');
+            if (seats.length > 0) {
+                btnOrder.classList.remove('bg-light');
+                btnOrder.style.background = "#112646";
+                btnOrder.style.color = "white";
+                btnOrder.style.cursor = "pointer";
+                // kalau di klik lakukan proses pembuatan data tiket
+                btnOrder.onclick = createTicket;
+            } else {
+                // classList : mengakses class HTML, add tambah class remove hapus class`
+            btnOrder.classList.add('bg-light');
+            btnOrder.style.background = '';
+            btnOrder.style.color = '';
+            btnOrder.style.cursor = '';
+            btnOrder.onclick = null;
+        }
+    }
+
+    function createTicket() {
+        // ajax (asychronous javascript and xml) : mengakses dara di database lewat JS. digunakan dengan jquery
+        $.ajax({
+            url: "{{ route('tickets.store') }}", // routing proses data
+            method: "POST", // method HTTP
+            data: {
+                _token: "{{ csrf_token() }}", // token CSRF
+                // fillable : value, data yang akan dikirim ke BE
+                user_id: $('#user_id').val(), // ambil value dr input id user_id
+                schedule_id: $('#schedule_id').val(), // ambil value dr input id schedule_id
+                date: $('#date').val(), // ambil value dr input id date
+                hour: $('#hour').val(), // ambil value dr input id hour
+                rows_of_seats: seats,
+                quantity: seats.length,
+                total_price: totalPrice,
+                service_fee: 4000 * seats.length,
+            },
+            success: function(response) {
+                // kalau berhasil mau ngapain
+                // window.location.href : redirect halaman lewat js
+                let ticketId = response.data.id;
+                window.location.href = `/tickets/${ticketId}/order`;
+                },
+                error: function(message) {
+                    // kalau gagal mau ngapain
+                    alert('Gagal membuat data tiket');
+                }
+            });
+        }
+    </script>
+@endpush

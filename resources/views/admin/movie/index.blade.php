@@ -58,7 +58,7 @@
                     { data: 'imgPoster', name: 'imgPoster', orderable: false, searchable: false },
                     { data: 'title', name: 'title', orderable: true, searchable: true },
                     { data: 'activeBadge', name: 'activeBadge', orderable:true, searchable:true },
-                    { data: 'btnActions', name: 'btnActions', orderable: false, searchable: false },
+                    { data: 'btnActions', name: 'btnActions', orderable: true, searchable: true },
                 ]
             });
         })

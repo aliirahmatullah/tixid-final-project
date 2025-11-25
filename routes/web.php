@@ -105,7 +105,7 @@ Route::middleware('isAdmin')->prefix('/admin')->name('admin.')->group(function (
         Route::post('/store', [MovieController::class, 'store'])->name('store');
         Route::get('/edit/{id}', [MovieController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [MovieController::class, 'update'])->name('update');
-        Route::put('/deactive/{id}', [MovieController::class, 'deactive'])->name('deactive');
+        Route::patch('/deactive/{id}', [MovieController::class, 'deactive'])->name('deactive');
         Route::delete('/delete/{id}', [MovieController::class, 'destroy'])->name('delete');
         Route::get('/trash', [MovieController::class, 'trash'])->name('trash');
         Route::patch('/restore/{id}', [MovieController::class, 'restore'])->name('restore');
